@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="el">
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Entry Panel</title>
+<style>
+body{margin:0;background:#0b0f14;font-family:Arial;color:#e5e7eb;
+display:flex;min-height:100vh;align-items:center;justify-content:center;}
+.panel{width:380px;background:#111827;border-radius:20px;padding:20px;text-align:center;}
+.display{background:#000;border-radius:12px;padding:15px;margin-bottom:15px;}
+.dots{font-size:28px;letter-spacing:8px;}
+button{width:30%;margin:5px;padding:15px;font-size:20px;
+background:#1f2937;color:white;border:none;border-radius:12px;}
+.clear{background:#7f1d1d;width:45%;}
+.back{background:#78350f;width:45%;}
+.lock{opacity:.5;pointer-events:none;}
+</style>
+</head>
+<body>
+<div class="panel" id="panel">
+<h3>ENTRY PANEL</h3>
+<div class="display">
+<div class="dots" id="dots">----</div>
+<div id="status">Σκάναρε NFC → βάλε PIN</div>
+</div>
+<div id="grid"></div>
+<br>
+<button class="back" onclick="backspace()">⌫</button>
+<button class="clear" onclick="clearPin()">CLEAR</button>
+</div>
+
+<script>
+const correctPin="1985";
+const webhookUrl="https://maker.ifttt.com/trigger/Spot/with/key/luheHa-HqvH8eYh6sQO-nhv5Elq9-yZEojNO6ImSfcn";
+
+let pin="";
+let fails=0;
+let locked=false;
+
+const dots=document.getElementById("dots");
+const status=document.getElementById("status");
+const panel=document.getElementById("panel");
+const grid=document.getElementById("grid");
+
+[1,2,3,4,5,6,7,8,9,0].forEach(n=>{
+let b=document.createElement("button");
+b.textContent=n;
+b.onclick=()=>press(n);
+grid.appendChild(b);
+});
+
+function update(){dots.textContent=pin.length?"•".repeat(pin.length):"----";}
+
+function press(n){
+if(locked)return;
+pin+=n;
+update();
+if(pin.length>=4)check();
+}
+
+function backspace(){pin=pin.slice(0,-1);update();}
+function clearPin(){pin="";update();}
+
+async function check(){
+if(pin===correctPin){
+status.textContent="Άνοιγμα...";
+try{await fetch(webhookUrl,{mode:"no-cors"});}catch(e){}
+pin="";update();
+setTimeout(()=>status.textContent="Σκάναρε NFC → βάλε PIN",4000);
+}else{
+fails++;pin="";update();
+status.textContent="Λάθος PIN";
+if(fails>=3){
+locked=true;
+panel.classList.add("lock");
+status.textContent="Κλείδωμα 30 δευτερόλεπτα";
+setTimeout(()=>{locked=false;fails=0;panel.classList.remove("lock");
+status.textContent="Σκάναρε NFC → βάλε PIN";},30000);
+}
+}
+}
+
+update();
+</script>
+</body>
+</html>
